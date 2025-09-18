@@ -1,0 +1,255 @@
+# Seamless Protocol Vaults Subgraph
+# Following The Graph best practices for optimal performance
+
+# ===== CORE ENTITIES =====
+
+# User entity - tracks all user activity across all vaults
+type User @entity(immutable: false) {
+  id: Bytes! # User address
+  # Vault-specific totals
+  totalDepositedUSDC: BigInt!
+  totalDepositedcbBTC: BigInt!
+  totalDepositedWETH: BigInt!
+  totalWithdrawnUSDC: BigInt!
+  totalWithdrawncbBTC: BigInt!
+  totalWithdrawnWETH: BigInt!
+  # Total across all vaults
+  totalDeposited: BigInt!
+  totalWithdrawn: BigInt!
+  # Relationships using @derivedFrom for performance
+  deposits: [Deposit!]! @derivedFrom(field: "user")
+  withdrawals: [Withdrawal!]! @derivedFrom(field: "user")
+  transfers: [Transfer!]! @derivedFrom(field: "from")
+  transfersReceived: [Transfer!]! @derivedFrom(field: "to")
+  # Timestamps
+  firstDepositAt: BigInt
+  lastActivityAt: BigInt
+}
+
+# Vault entity - tracks vault metadata and stats
+type Vault @entity(immutable: false) {
+  id: Bytes! # Vault address
+  name: String! # "USDC", "cbBTC", "WETH"
+  symbol: String!
+  totalAssets: BigInt!
+  totalSupply: BigInt!
+  # Relationships
+  deposits: [Deposit!]! @derivedFrom(field: "vault")
+  withdrawals: [Withdrawal!]! @derivedFrom(field: "vault")
+  accrueInterestEvents: [AccrueInterest!]! @derivedFrom(field: "vault")
+  # Timestamps
+  createdAt: BigInt!
+  lastUpdatedAt: BigInt!
+}
+
+# ===== EVENT ENTITIES (Immutable for performance) =====
+
+# Deposit events across all vaults
+type Deposit @entity(immutable: true) {
+  id: Bytes! # Transaction hash + log index
+  user: User!
+  vault: Vault!
+  vaultName: String! # "USDC", "cbBTC", "WETH"
+  sender: Bytes! # address
+  owner: Bytes! # address
+  assets: BigInt! # uint256
+  shares: BigInt! # uint256
+  # Block data
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+# Withdrawal events across all vaults
+type Withdrawal @entity(immutable: true) {
+  id: Bytes! # Transaction hash + log index
+  user: User!
+  vault: Vault!
+  vaultName: String! # "USDC", "cbBTC", "WETH"
+  sender: Bytes! # address
+  receiver: Bytes! # address
+  owner: Bytes! # address
+  assets: BigInt! # uint256
+  shares: BigInt! # uint256
+  # Block data
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+# Transfer events (share transfers)
+type Transfer @entity(immutable: true) {
+  id: Bytes! # Transaction hash + log index
+  vault: Vault!
+  vaultName: String! # "USDC", "cbBTC", "WETH"
+  from: User!
+  to: User!
+  value: BigInt! # uint256
+  # Block data
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+# Interest accrual events
+type AccrueInterest @entity(immutable: true) {
+  id: Bytes! # Transaction hash + log index
+  vault: Vault!
+  vaultName: String! # "USDC", "cbBTC", "WETH"
+  newTotalAssets: BigInt! # uint256
+  feeShares: BigInt! # uint256
+  # Block data
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+# ===== TIMESERIES ENTITIES (For analytics) =====
+
+# Daily vault statistics
+type VaultDailySnapshot @entity(immutable: false) {
+  id: Bytes! # Vault address + day
+  vault: Vault!
+  vaultName: String!
+  date: Int! # Unix timestamp for the day
+  totalAssets: BigInt!
+  totalSupply: BigInt!
+  dailyDeposits: BigInt!
+  dailyWithdrawals: BigInt!
+  dailyVolume: BigInt!
+  uniqueUsers: Int!
+}
+
+# Daily user statistics
+type UserDailySnapshot @entity(immutable: false) {
+  id: Bytes! # User address + day
+  user: User!
+  date: Int! # Unix timestamp for the day
+  totalDeposited: BigInt!
+  totalWithdrawn: BigInt!
+  netPosition: BigInt!
+  # Vault-specific daily stats
+  usdcDeposited: BigInt!
+  usdcWithdrawn: BigInt!
+  cbbtcDeposited: BigInt!
+  cbbtcWithdrawn: BigInt!
+  wethDeposited: BigInt!
+  wethWithdrawn: BigInt!
+}
+
+# ===== TOKEN ENTITIES =====
+
+# SEEM Token entity - tracks token metadata and stats
+type SeemToken @entity(immutable: false) {
+  id: Bytes! # Token contract address
+  name: String! # "Seamless Protocol"
+  symbol: String! # "SEEM"
+  decimals: Int!
+  totalSupply: BigInt!
+  # Token holder stats
+  totalHolders: Int!
+  # Relationships
+  transfers: [TokenTransfer!]! @derivedFrom(field: "token")
+  approvals: [TokenApproval!]! @derivedFrom(field: "token")
+  # Timestamps
+  createdAt: BigInt!
+  lastUpdatedAt: BigInt!
+}
+
+# Token holder entity - tracks individual token holders
+type TokenHolder @entity(immutable: false) {
+  id: Bytes! # User address
+  token: SeemToken!
+  balance: BigInt!
+  # Transfer activity
+  transfersSent: [TokenTransfer!]! @derivedFrom(field: "from")
+  transfersReceived: [TokenTransfer!]! @derivedFrom(field: "to")
+  # Timestamps
+  firstTransferAt: BigInt
+  lastTransferAt: BigInt
+}
+
+# Token transfer events
+type TokenTransfer @entity(immutable: true) {
+  id: Bytes! # Transaction hash + log index
+  token: SeemToken!
+  from: TokenHolder!
+  to: TokenHolder!
+  value: BigInt!
+  # Block data
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+# Token approval events
+type TokenApproval @entity(immutable: true) {
+  id: Bytes! # Transaction hash + log index
+  token: SeemToken!
+  owner: TokenHolder!
+  spender: TokenHolder!
+  value: BigInt!
+  # Block data
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+# ===== AGGREGATION ENTITIES =====
+
+# Global statistics
+type GlobalStats @entity(immutable: false) {
+  id: Bytes! # "global"
+  totalUsers: Int!
+  totalVaults: Int!
+  totalDeposits: BigInt!
+  totalWithdrawals: BigInt!
+  totalVolume: BigInt!
+  # Vault-specific totals
+  usdcTotalAssets: BigInt!
+  cbbtcTotalAssets: BigInt!
+  wethTotalAssets: BigInt!
+  # Token stats
+  seemTotalSupply: BigInt!
+  seemTotalHolders: Int!
+  # Last updated
+  lastUpdatedAt: BigInt!
+}
+
+# ===== ADMIN/EVENTS (Immutable) =====
+
+# Fee changes
+type SetFee @entity(immutable: true) {
+  id: Bytes! # Transaction hash + log index
+  vault: Vault!
+  vaultName: String!
+  caller: Bytes! # address
+  newFee: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+# Ownership transfers
+type OwnershipTransferred @entity(immutable: true) {
+  id: Bytes! # Transaction hash + log index
+  vault: Vault!
+  vaultName: String!
+  previousOwner: Bytes! # address
+  newOwner: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+# Guardian changes
+type SetGuardian @entity(immutable: true) {
+  id: Bytes! # Transaction hash + log index
+  vault: Vault!
+  vaultName: String!
+  caller: Bytes! # address
+  guardian: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}

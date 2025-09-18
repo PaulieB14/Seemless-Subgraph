@@ -1,0 +1,124 @@
+specVersion: 1.3.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: SeamlessUSDCVault
+    network: base
+    source:
+      address: "0x616a4E1db48e22028f6bbf20444Cd3b8e3273738"
+      abi: SeamlessUSDCVault
+      startBlock: 24831748
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - Vault
+        - Deposit
+        - Withdrawal
+        - Transfer
+        - AccrueInterest
+      abis:
+        - name: SeamlessUSDCVault
+          file: ./abis/SeamlessUSDCVault.json
+      eventHandlers:
+        - event: Deposit(indexed address,indexed address,uint256,uint256)
+          handler: handleDepositUSDC
+        - event: Withdraw(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleWithdrawUSDC
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransferUSDC
+        - event: AccrueInterest(uint256,uint256)
+          handler: handleAccrueInterestUSDC
+      file: ./src/seamless-vaults.ts
+  - kind: ethereum
+    name: SeamlesscbBTCVault
+    network: base
+    source:
+      address: "0x5a47C803488FE2BB0A0EAaf346b420e4dF22F3C7"
+      abi: SeamlesscbBTCVault
+      startBlock: 25438718
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - Vault
+        - Deposit
+        - Withdrawal
+        - Transfer
+        - AccrueInterest
+      abis:
+        - name: SeamlesscbBTCVault
+          file: ./abis/SeamlesscbBTCVault.json
+      eventHandlers:
+        - event: Deposit(indexed address,indexed address,uint256,uint256)
+          handler: handleDepositcbBTC
+        - event: Withdraw(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleWithdrawcbBTC
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfercbBTC
+        - event: AccrueInterest(uint256,uint256)
+          handler: handleAccrueInterestcbBTC
+      file: ./src/seamless-vaults.ts
+  - kind: ethereum
+    name: SeamlessWETHVault
+    network: base
+    source:
+      address: "0x27d8c7273fd3fcc6956a0b370ce5fd4a7fc65c18"
+      abi: SeamlessWETHVault
+      startBlock: 26085591
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - Vault
+        - Deposit
+        - Withdrawal
+        - Transfer
+        - AccrueInterest
+      abis:
+        - name: SeamlessWETHVault
+          file: ./abis/SeamlessWETHVault.json
+      eventHandlers:
+        - event: Deposit(indexed address,indexed address,uint256,uint256)
+          handler: handleDepositWETH
+        - event: Withdraw(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleWithdrawWETH
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransferWETH
+        - event: AccrueInterest(uint256,uint256)
+          handler: handleAccrueInterestWETH
+      file: ./src/seamless-vaults.ts
+  - kind: ethereum
+    name: SeemToken
+    network: base
+    source:
+      address: "0x1C7a460413dD4e964f96D8dFC56E7223cE88CD85"
+      abi: SeemToken
+      startBlock: 26085591
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - SeemToken
+        - TokenHolder
+        - TokenTransfer
+        - TokenApproval
+      abis:
+        - name: SeemToken
+          file: ./abis/SeemToken.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTokenTransfer
+        - event: Approval(indexed address,indexed address,uint256)
+          handler: handleTokenApproval
+      file: ./src/seamless-vaults.ts
